@@ -39,14 +39,14 @@ jobs:
           curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
           curl -L -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
           curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
-          curl -L -o ViaVersion.jar https://github.com/ViaVersion/ViaVersion/releases/download/5.11.2/ViaVersion-5.11.2.jar
-          curl -L -o ViaBackwards.jar https://github.com/ViaVersion/ViaBackwards/releases/download/5.11.2/ViaBackwards-5.11.2.jar
+        
           curl -L -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
           curl -L -o GSit.jar https://cdn.modrinth.com/data/4aX7aP9e/versions/TqS1D3gP/GSit-7.0.0.0.jar
           curl -L -o CoreProtect.jar https://cdn.modrinth.com/data/6eMEw2Ct/versions/A00IijcZ/coreprotect-22.4.jar
           curl -L -o GriefPrevention.jar https://cdn.modrinth.com/data/M5iDUc2T/versions/8iEwWq7A/GriefPrevention-16.18.jar
           curl -L -o WorldEdit.jar https://cdn.modrinth.com/data/1u6JkXh5/versions/vz8aG7wN/worldedit-bukkit-7.3.11.jar
-
+         curl -L -o ViaVersion.jar https://cdn.modrinth.com/data/P1OZGk5p/versions/L7v7Mf9N/ViaVersion-5.4.2.jar
+          curl -L -o ViaBackwards.jar https://cdn.modrinth.com/data/NpMmpW5M/versions/9gQj3kL2/ViaBackwards-5.4.2.jar
           ls -lh
           cd ..
           [ ! -f eula.txt ] && echo "eula=true" > eula.txt
