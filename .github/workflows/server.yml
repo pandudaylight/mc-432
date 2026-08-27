@@ -11,34 +11,23 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          
-      - name: Cache Server Jar
-        uses: actions/cache@v4
-        with:
-          path: |
-            paper.jar
-            plugins
-          key: mc-1.21.1-v4
-
       - name: Start Server
         run: |
+          mkdir -p plugins
           if [ ! -f paper.jar ]; then
-            echo "Downloading jar..."
             curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
           fi
+          rm -f plugins/EssentialsX.jar
+          curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          curl -L -o plugins/EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
+          curl -L -o plugins/Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
           
-          mkdir -p plugins
-          if [ ! -f plugins/Geyser-Spigot.jar ]; then
-            curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-            curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-            curl -L -o plugins/EssentialsX.jar https://hangarcdn.papermc.io/plugins/EssentialsX/EssentialsX/2.21.2/EssentialsX-2.21.2.jar
-            curl -L -o plugins/Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
-          fi
-
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
           
           java -Xmx2048M -Xms1024M -jar paper.jar nogui &
           sleep 35
           ss -tlnp
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 25598:localhost:25565 nokey@localhost.run
+          # Try 3 ports, jo khali hoga lag jayega
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 32455:localhost:25565 nokey@localhost.run || ssh -o StrictHostKeyChecking=no -R 25565:localhost:25565 nokey@localhost.run || ssh -o StrictHostKeyChecking=no -R 25577:localhost:25565 nokey@localhost.run
