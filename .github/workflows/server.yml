@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -69,9 +69,3 @@ jobs:
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET
-
-<ElicitationsGroup message="What would you like to do next?">
-<Elicitation label="Add auto-restart loop for Minecraft server crashes" query="Add auto-restart loop for Minecraft server crashes" query_intent="CLICKABLE_SUGGESTION" />
-<Elicitation label="Optimize RAM allocations in startup script" query="Optimize RAM allocations in startup script" query_intent="CLICKABLE_SUGGESTION" />
-<Elicitation label="Add automated world backup step to workflow" query="Add automated world backup step to workflow" query_intent="CLICKABLE_SUGGESTION" />
-</ElicitationsGroup>
