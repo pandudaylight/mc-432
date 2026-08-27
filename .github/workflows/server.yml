@@ -13,10 +13,20 @@ jobs:
           distribution: 'temurin'
       - name: Start Server
         run: |
+          mkdir -p plugins
           curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
+          
+          # Plugins download
+          curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          curl -L -o plugins/EssentialsX.jar https://hangarcdn.papermc.io/plugins/EssentialsX/EssentialsX/2.21.2/EssentialsX-2.21.2.jar
+          curl -L -o plugins/Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
+          
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
+          echo "server-port=25565" >> server.properties
+          
           java -Xmx2048M -Xms1024M -jar paper.jar nogui &
           sleep 35
           ss -tlnp
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 25565:localhost:25565 nokey@localhost.run
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 25566:localhost:25565 nokey@localhost.run
