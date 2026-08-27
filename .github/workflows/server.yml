@@ -1,4 +1,4 @@
-name: MC Direct IP No Localhost
+name: MC Permanent Playit
 on:
   workflow_dispatch:
 jobs:
@@ -17,7 +17,7 @@ jobs:
             paper.jar
             plugins
             world
-          key: mc-direct-v13
+          key: mc-perm-v14
       - name: Run
         run: |
           [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
@@ -28,6 +28,9 @@ jobs:
           echo "online-mode=false" > server.properties
           echo "view-distance=4" >> server.properties
           java -Xmx1G -jar paper.jar nogui &
-          sleep 25
-          echo "=== DIRECT MC IP NICHE HAI ==="
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:25565 tcp@a.pinggy.io
+          sleep 20
+          # Playit download with retry
+          curl -L --retry 10 -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-0.15.26
+          chmod +x playit
+          echo "=== CLAIM LINK NICHE HAI ==="
+          ./playit
