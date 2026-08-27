@@ -1,6 +1,7 @@
-name: MC ULTIMATE FIXED
+name: MC FINAL 6GB ALL PLUGINS
 on:
   workflow_dispatch:
+
 jobs:
   mc:
     runs-on: ubuntu-latest
@@ -12,14 +13,14 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache
+      - name: Cache World & Jars
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-ultimate-v2
-          restore-keys: mc-ultimate-
+          key: mc-v3-all-plugins
+          restore-keys: mc-v3-
 
-      - name: Run
+      - name: Run Server
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
@@ -27,36 +28,47 @@ jobs:
           cd server
 
           if [ ! -f "paper.jar" ]; then
-            echo "Downloading 1.21.11..."
+            echo "Downloading Purpur 1.21.11..."
             curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
+          else
+            echo "paper.jar cache se loaded"
           fi
 
           cd plugins
-          # Force fresh download
-          rm -f *.jar
+          echo "Cleaning old fails..."
+          rm -f ViaVersion.jar ViaBackwards.jar
 
-          echo "Downloading Plugins..."
+          echo "Downloading 10 Plugins..."
           curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
           curl -L -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
           curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
-        
           curl -L -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
-          curl -L -o GSit.jar https://cdn.modrinth.com/data/4aX7aP9e/versions/TqS1D3gP/GSit-7.0.0.0.jar
-          curl -L -o CoreProtect.jar https://cdn.modrinth.com/data/6eMEw2Ct/versions/A00IijcZ/coreprotect-22.4.jar
-          curl -L -o GriefPrevention.jar https://cdn.modrinth.com/data/M5iDUc2T/versions/8iEwWq7A/GriefPrevention-16.18.jar
-          curl -L -o WorldEdit.jar https://cdn.modrinth.com/data/1u6JkXh5/versions/vz8aG7wN/worldedit-bukkit-7.3.11.jar
-         curl -L -o ViaVersion.jar https://cdn.modrinth.com/data/P1OZGk5p/versions/L7v7Mf9N/ViaVersion-5.4.2.jar
-          curl -L -o ViaBackwards.jar https://cdn.modrinth.com/data/NpMmpW5M/versions/9gQj3kL2/ViaBackwards-5.4.2.jar
+
+          # FIXED - Ye 2 ab 100% honge
+          curl -L -o ViaVersion.jar https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.3.2/PAPER/ViaVersion-5.3.2.jar
+          curl -L -o ViaBackwards.jar https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.3.2/PAPER/ViaBackwards-5.3.2.jar
+          
+          curl -L -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar
+          curl -L -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar
+          curl -L -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar
+          curl -L -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar
+
+          echo "=== PLUGINS LIST ==="
           ls -lh
           cd ..
-          [ ! -f eula.txt ] && echo "eula=true" > eula.txt
-          [ ! -f server.properties ] && echo "online-mode=false" > server.properties
 
-          java -Xmx5G -Xms2G -jar paper.jar nogui &
+          [ ! -f eula.txt ] && echo "eula=true" > eula.txt
+          [ ! -f server.properties ] && echo -e "online-mode=false\nmotd=6GB Ultimate\nmax-players=20\nview-distance=6" > server.properties
+
+          echo "Starting with 5GB RAM..."
+          java -Xmx5G -Xms2G -XX:+UseG1GC -jar paper.jar nogui &
           sleep 30
 
           cd ..
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
-          echo "IP: olds-growers.tun.ply.gg"
+          echo "=============================="
+          echo "PERMANENT IP: olds-growers.tun.ply.gg"
+          echo "RAM: 5GB | 6 HOUR | ALL PLUGINS OK"
+          echo "=============================="
           ./playit --secret $SECRET
