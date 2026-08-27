@@ -32,15 +32,15 @@ jobs:
           cd server
 
           if [ ! -f paper.jar ]; then
-            curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
+            MC_VER=$(curl -s https://api.papermc.io/v2/projects/paper | jq -r '.versions[-1]')
+            BUILD=$(curl -s https://api.papermc.io/v2/projects/paper/versions/${MC_VER} | jq -r '.builds[-1]')
+            curl -L -o paper.jar "https://api.papermc.io/v2/projects/paper/versions/${MC_VER}/builds/${BUILD}/downloads/paper-${MC_VER}-${BUILD}.jar"
           fi
 
           cd plugins
 
-          # Direct GitHub URLs lagaye hain, Modrinth API hata di hai
           if [ ! -f ViaVersion.jar ]; then curl -L -o ViaVersion.jar https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion.jar; fi
           if [ ! -f ViaBackwards.jar ]; then curl -L -o ViaBackwards.jar https://github.com/ViaVersion/ViaBackwards/releases/latest/download/ViaBackwards.jar; fi
-          
           if [ ! -f Geyser.jar ]; then curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
           if [ ! -f floodgate.jar ]; then curl -L -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
           if [ ! -f EssentialsX.jar ]; then curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
