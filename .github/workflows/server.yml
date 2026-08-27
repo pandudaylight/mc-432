@@ -15,9 +15,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-v9-final
+          key: mc-final-10
           restore-keys: |
-            mc-v9-
+            mc-final-
       - name: Run
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
