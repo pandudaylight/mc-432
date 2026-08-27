@@ -15,20 +15,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-v8
+          key: mc-v9-final
           restore-keys: |
-            mc-v8
+            mc-v9-
       - name: Run
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq > /dev/null 2>&1
           mkdir -p server/plugins
           cd server
-          if [! -f paper.jar ]; then curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download; fi
+          if [! -f paper.jar ]; then
+            curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download
+          fi
           cd plugins
-          if [! -f ViaVersion.jar ]; then V=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url'); curl -L -o ViaVersion.jar "$V"; fi
-          if [! -f ViaBackwards.jar ]; then B=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url'); curl -L -o ViaBackwards.jar "$B"; fi
+          if [! -f ViaVersion.jar ]; then
+            V=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url')
+            curl -L -o ViaVersion.jar "$V"
+          fi
+          if [! -f ViaBackwards.jar ]; then
+            B=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url')
+            curl -L -o ViaBackwards.jar "$B"
+          fi
           if [! -f Geyser.jar ]; then curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
           if [! -f floodgate.jar ]; then curl -L -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
           if [! -f EssentialsX.jar ]; then curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
