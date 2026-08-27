@@ -1,4 +1,4 @@
-         ./playit --sname: MC STREAMLINE FINAL
+name: MC FINAL FIX
 on:
   workflow_dispatch:
 
@@ -13,11 +13,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache Server
+      - name: Cache
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-final-v5
+          key: mc-final-v6
           restore-keys: |
             mc-final-
 
@@ -25,6 +25,7 @@ jobs:
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
+          set -e
           sudo apt-get install -y jq > /dev/null 2>&1
           mkdir -p server/plugins
           cd server
@@ -33,7 +34,7 @@ jobs:
             echo "Downloading Purpur 1.21.11"
             curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download
           else
-            echo "Skip paper.jar"
+            echo "Skip paper.jar - cached"
           fi
 
           cd plugins
@@ -41,17 +42,13 @@ jobs:
           if [! -f ViaVersion.jar ]; then
             VIA=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url')
             curl -L -o ViaVersion.jar "$VIA"
-            echo "Downloaded ViaVersion"
-          else
-            echo "Skip ViaVersion"
+            echo "ViaVersion Modrinth OK"
           fi
 
           if [! -f ViaBackwards.jar ]; then
             BACK=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url')
             curl -L -o ViaBackwards.jar "$BACK"
-            echo "Downloaded ViaBackwards"
-          else
-            echo "Skip ViaBackwards"
+            echo "ViaBackwards Modrinth OK"
           fi
 
           if [! -f Geyser.jar ]; then curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
