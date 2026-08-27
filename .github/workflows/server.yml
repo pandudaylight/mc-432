@@ -1,30 +1,76 @@
-name: MC PERMANENT FINAL
+name: MC ULTIMATE 6GB
 on:
   workflow_dispatch:
+
 jobs:
   mc:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 360  # 6 hour
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Run
+
+      - name: Cache Minecraft & Plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            server/
+            paper.jar
+          key: mc-1.21.11-cache-v1
+          restore-keys: |
+            mc-1.21.11-cache-
+
+      - name: Run Server
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
-          mkdir -p plugins
-          curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-          curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-          echo "eula=true" > eula.txt
-          echo "online-mode=false" > server.properties
-          java -Xmx2G -jar paper.jar nogui &
-          sleep 15
+          mkdir -p server/plugins
+          cd server
+
+          # 1. Server jar - sirf pehli baar download
+          if [ ! -f "paper.jar" ]; then
+            echo "Downloading Purpur 1.21.11..."
+            curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download
+            # fallback agar 1.21.11 na mile to 1.21.1
+            if [ ! -s paper.jar ]; then
+              curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
+            fi
+          else
+            echo "paper.jar cache se mil gaya, skip download"
+          fi
+
+          # 2. Plugins - check karke download
+          cd plugins
+          [ ! -f "Geyser-Spigot.jar" ] && curl -L -o Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          [ ! -f "floodgate-spigot.jar" ] && curl -L -o floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          [ ! -f "EssentialsX.jar" ] && curl -L -o EssentialsX.jar https://hangarcdn.papermc.io/plugins/EssentialsX/EssentialsX/versions/2.21.2/EssentialsX-2.21.2.jar
+          [ ! -f "ViaVersion.jar" ] && curl -L -o ViaVersion.jar https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.6.0/ViaVersion-5.6.0.jar
+          [ ! -f "ViaBackwards.jar" ] && curl -L -o ViaBackwards.jar https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.6.0/ViaBackwards-5.6.0.jar
+          [ ! -f "Vault.jar" ] && curl -L -o Vault.jar https://hangarcdn.papermc.io/plugins/MilkBowl/Vault/versions/1.7.3/Vault-1.7.3.jar
+          [ ! -f "GSit.jar" ] && curl -L -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/GSit-7.0.0.0.jar
+          [ ! -f "CoreProtect.jar" ] && curl -L -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/CoreProtect-22.4.jar
+          [ ! -f "GriefPrevention.jar" ] && curl -L -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/GriefPrevention-16.18.0.jar
+          [ ! -f "WorldEdit.jar" ] && curl -L -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/WorldEdit-Bukkit-7.3.11.jar
+          cd ..
+
+          # 3. Config - sirf pehli baar banega, world overwrite nahi hoga
+          [ ! -f "eula.txt" ] && echo "eula=true" > eula.txt
+          [ ! -f "server.properties" ] && echo -e "online-mode=false\nmotd=6GB ULTIMATE SERVER\nmax-players=20\nview-distance=6" > server.properties
+
+          # 4. 6GB RAM se start
+          java -Xmx5G -Xms2G -XX:+UseG1GC -jar paper.jar nogui &
+          sleep 25
+
+          # 5. Playit Permanent
+          cd ..
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
-          echo "=== PERMANENT IP ==="
-          echo "olds-gallons.tun.ply.gg"
+          echo "==================================="
+          echo "IP: olds-growers.tun.ply.gg"
+          echo "RAM: 5GB | TIME: 6 HOUR | CACHE: ON"
+          echo "==================================="
           ./playit --secret $SECRET
