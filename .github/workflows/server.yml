@@ -1,4 +1,4 @@
-name: MC Last Tunnel
+name: MC Cloudflare Only
 on:
   workflow_dispatch:
 jobs:
@@ -11,35 +11,24 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Cache
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: |
             paper.jar
             plugins
             world
-            world_nether
-            world_the_end
-          key: mc-last-v11
-      - name: Start
+          key: mc-cf-only-v12
+      - name: Run
         run: |
-          mkdir -p plugins
           [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
-          [ -f plugins/EssentialsX.jar ] || curl -L -o plugins/EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
-          [ -f plugins/Vault.jar ] || curl -L -o plugins/Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
+          mkdir -p plugins
           [ -f plugins/Geyser-Spigot.jar ] || curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
           [ -f plugins/floodgate-spigot.jar ] || curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
-          echo "view-distance=5" >> server.properties
-          java -Xmx2048M -Xms1024M -jar paper.jar nogui &
-          sleep 30
-          
-          # 1. PLAYIT.GG - sabse best, permanent IP
-          curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-0.15.26
-          chmod +x playit
-          echo "=== PLAYIT CLAIM LINK ==="
-          ./playit &
-          sleep 20
-          cat ~/.config/playit_gg/playit.toml || cat ~/.config/playit/config.json || ps aux | grep playit
-          wait
+          echo "view-distance=4" >> server.properties
+          java -Xmx1G -jar paper.jar nogui &
+          sleep 25
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cf
+          chmod +x cf
+          ./cf tunnel --url tcp://localhost:25565 --no-autoupdate
