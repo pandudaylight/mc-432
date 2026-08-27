@@ -1,4 +1,4 @@
-name: MC Cloudflare Only
+name: MC Direct IP No Localhost
 on:
   workflow_dispatch:
 jobs:
@@ -17,7 +17,7 @@ jobs:
             paper.jar
             plugins
             world
-          key: mc-cf-only-v12
+          key: mc-direct-v13
       - name: Run
         run: |
           [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
@@ -29,6 +29,5 @@ jobs:
           echo "view-distance=4" >> server.properties
           java -Xmx1G -jar paper.jar nogui &
           sleep 25
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cf
-          chmod +x cf
-          ./cf tunnel --url tcp://localhost:25565 --no-autoupdate
+          echo "=== DIRECT MC IP NICHE HAI ==="
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:25565 tcp@a.pinggy.io
