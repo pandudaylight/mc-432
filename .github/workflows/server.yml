@@ -11,27 +11,20 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: actions/cache@v4
-        with:
-          path: |
-            paper.jar
-            plugins
-            world
-            world_nether
-            world_the_end
-          key: mc-final-v16
       - name: Run
+        env:
+          SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
+          curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
           mkdir -p plugins
-          [ -f plugins/Geyser-Spigot.jar ] || curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-          [ -f plugins/floodgate-spigot.jar ] || curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
           java -Xmx2G -jar paper.jar nogui &
-          sleep 20
+          sleep 15
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
-          echo "=== SERVER STARTED - PERMANENT IP ==="
+          echo "=== PERMANENT IP ==="
           echo "olds-gallons.tun.ply.gg"
-          ./playit --secret ${{ secrets.PLAYIT_SECRET }}
+          ./playit --secret $SECRET
