@@ -41,4 +41,4 @@ jobs:
           java -Xmx2048M -Xms1024M -jar paper.jar nogui &
           sleep 35
           ss -tlnp
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 32455:localhost:25565 nokey@localhost.run
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 25598:localhost:25565 nokey@localhost.run
