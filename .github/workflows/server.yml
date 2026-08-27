@@ -1,4 +1,4 @@
-name: MC Cloudflare Final
+name: MC Final Bore
 on:
   workflow_dispatch:
 jobs:
@@ -20,8 +20,8 @@ jobs:
             world
             world_nether
             world_the_end
-          key: mc-cf-final-v7
-      - name: Start Server
+          key: mc-bore-final-v8
+      - name: Start
         run: |
           mkdir -p plugins
           [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
@@ -29,39 +29,10 @@ jobs:
           [ -f plugins/Vault.jar ] || curl -L -o plugins/Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
           [ -f plugins/Geyser-Spigot.jar ] || curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
           [ -f plugins/floodgate-spigot.jar ] || curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-          
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
           echo "view-distance=5" >> server.properties
-          
           java -Xmx2048M -Xms1024M -jar paper.jar nogui &
           sleep 35
-          
-          # Cloudflare Tunnel
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
-          chmod +x cloudflared
-          echo "=== CLOUDFLARE IP NICHE HAI ==="
-          ./cloudflared tunnel --url tcp://localhost:25565 --no-autoupdate            curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-            curl -L -o plugins/EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
-            curl -L -o plugins/Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
-          fi
-
-          echo "eula=true" > eula.txt
-          # Low load settings
-          cat > server.properties <<EOF
-          online-mode=false
-          server-port=25565
-          view-distance=5
-          simulation-distance=4
-          max-players=10
-          sync-chunk-writes=false
-          EOF
-
-          java -Xmx2048M -Xms1024M --add-modules=jdk.incubator.vector -jar paper.jar nogui &
-          
-          sleep 40
-          echo "=== SERVER IS UP ==="
-          ss -tlnp | grep 25565
-          
-          # Tunnel - ye wala port hamesha khali milta hai
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R 25565:localhost:25565 nokey@localhost.run
+          echo "=== BORE LINK NICHE HAI ==="
+          ssh -o StrictHostKeyChecking=no -R 0:localhost:25565 bore.pub
