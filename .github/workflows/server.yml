@@ -1,4 +1,4 @@
-name: MC Permanent Playit
+name: MC Permanent Playit FIXED
 on:
   workflow_dispatch:
 jobs:
@@ -17,7 +17,7 @@ jobs:
             paper.jar
             plugins
             world
-          key: mc-perm-v14
+          key: mc-perm-fixed-v15
       - name: Run
         run: |
           [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
@@ -26,11 +26,11 @@ jobs:
           [ -f plugins/floodgate-spigot.jar ] || curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
-          echo "view-distance=4" >> server.properties
           java -Xmx1G -jar paper.jar nogui &
           sleep 20
-          # Playit download with retry
-          curl -L --retry 10 -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-0.15.26
+          # Sahi download link
+          curl -L --retry 10 -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
+          ls -lh playit
           chmod +x playit
-          echo "=== CLAIM LINK NICHE HAI ==="
+          echo "=== CLAIM LINK NICHE AAYEGA ==="
           ./playit
