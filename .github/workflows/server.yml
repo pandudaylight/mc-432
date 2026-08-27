@@ -32,24 +32,27 @@ jobs:
           cd server
 
           if [ ! -f server.jar ]; then
-            curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.4/latest/download
+            curl -sSL -H "User-Agent: Mozilla/5.0" -o server.jar https://api.purpurmc.org/v2/purpur/1.21.4/latest/download
           fi
 
           cd plugins
 
-          # Essential Cross-Play Plugins
-          curl -L -o ViaVersion.jar https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion.jar
-          curl -L -o ViaBackwards.jar https://github.com/ViaVersion/ViaBackwards/releases/latest/download/ViaBackwards.jar
-          curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-          curl -L -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          # Dynamic GitHub API Jar Download
+          VIAVER_URL=$(curl -sSL -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          curl -sSL -H "User-Agent: Mozilla/5.0" -o ViaVersion.jar "$VIAVER_URL"
 
-          # Extra Server Plugins
-          if [ ! -f EssentialsX.jar ]; then curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
-          if [ ! -f Vault.jar ]; then curl -L -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
-          if [ ! -f WorldEdit.jar ]; then curl -L -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
-          if [ ! -f GriefPrevention.jar ]; then curl -L -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
-          if [ ! -f CoreProtect.jar ]; then curl -L -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
-          if [ ! -f GSit.jar ]; then curl -L -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
+          VIABACK_URL=$(curl -sSL -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          curl -sSL -H "User-Agent: Mozilla/5.0" -o ViaBackwards.jar "$VIABACK_URL"
+
+          curl -sSL -H "User-Agent: Mozilla/5.0" -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          curl -sSL -H "User-Agent: Mozilla/5.0" -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+
+          if [ ! -f EssentialsX.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
+          if [ ! -f Vault.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
+          if [ ! -f WorldEdit.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
+          if [ ! -f GriefPrevention.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
+          if [ ! -f CoreProtect.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
+          if [ ! -f GSit.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
 
           cd ..
 
@@ -61,6 +64,6 @@ jobs:
 
           cd ..
 
-          curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
+          curl -sSL -H "User-Agent: Mozilla/5.0" -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET
