@@ -32,7 +32,7 @@ jobs:
           cd server
 
           if [ ! -f server.jar ]; then
-            curl -L -o server.jar https://download.getbukkit.org/spigot/spigot-1.21.4.jar
+            curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.4/latest/download
           fi
 
           cd plugins
