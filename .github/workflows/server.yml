@@ -1,6 +1,7 @@
-name: MC ANTI-OVERWRITE FINAL
+name: MC STREAMLINE FINAL
 on:
   workflow_dispatch:
+
 jobs:
   mc:
     runs-on: ubuntu-latest
@@ -12,84 +13,70 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache Server
+      - name: Cache
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-anti-overwrite-v1
-          restore-keys: mc-anti-overwrite-
+          key: mc-final-v4
+          restore-keys: mc-final-
 
-      - name: Run Server
+      - name: Run
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq > /dev/null 2>&1
           mkdir -p server/plugins
           cd server
 
-          # --- ANTI-OVERWRITE SYSTEM ---
-          # Server jar
-          if [! -f "paper.jar" ] || [ $(stat -c%s paper.jar 2>/dev/null || echo 0) -lt 1000000 ]; then
-            echo "[DOWNLOAD] paper.jar nahi hai, downloading 1.21.11..."
-            curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download
+          # Server 1.21.11 - anti overwrite
+          if [! -f paper.jar ] || [! -s paper.jar ]; then
+            echo "Downloading Purpur 1.21.11"
+            curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.11/latest/download
           else
-            echo "[SKIP] paper.jar already hai, cache se"
+            echo "Skip paper.jar - already cached"
           fi
 
           cd plugins
 
-          # Function - sirf nahi hai to download
-          download_if_missing() {
-            FILE=$1
-            URL=$2
-            if [! -f "$FILE" ] || [ $(stat -c%s "$FILE" 2>/dev/null || echo 0) -lt 50000 ]; then
-              echo "[DOWNLOAD] $FILE..."
-              curl -L -o "$FILE" "$URL"
-            else
-              echo "[SKIP] $FILE already hai"
-            fi
-          }
-
-          # Modrinth Via - Anti-overwrite
-          if [! -f "ViaVersion.jar" ] || [ $(stat -c%s ViaVersion.jar) -lt 50000 ]; then
-            VIA_URL=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url')
-            echo "[DOWNLOAD] ViaVersion from Modrinth..."
-            curl -L -o ViaVersion.jar "$VIA_URL"
+          # ViaVersion - Modrinth
+          if [! -f ViaVersion.jar ]; then
+            URL=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url')
+            curl -L -o ViaVersion.jar $URL
+            echo "Downloaded ViaVersion"
           else
-            echo "[SKIP] ViaVersion.jar already hai"
+            echo "Skip ViaVersion"
           fi
 
-          if [! -f "ViaBackwards.jar" ] || [ $(stat -c%s ViaBackwards.jar) -lt 50000 ]; then
-            BACK_URL=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url')
-            echo "[DOWNLOAD] ViaBackwards from Modrinth..."
-            curl -L -o ViaBackwards.jar "$BACK_URL"
+          # ViaBackwards - Modrinth
+          if [! -f ViaBackwards.jar ]; then
+            URL=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url')
+            curl -L -o ViaBackwards.jar $URL
+            echo "Downloaded ViaBackwards"
           else
-            echo "[SKIP] ViaBackwards.jar already hai"
+            echo "Skip ViaBackwards"
           fi
 
-          # Baaki sab - sirf missing pe
-          download_if_missing Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-          download_if_missing floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-          download_if_missing EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
-          download_if_missing Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
-          download_if_missing WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar
-          download_if_missing GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar
-          download_if_missing CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar
-          download_if_missing GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar
+          # Others - only if missing
+          [! -f Geyser.jar ] && curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          [! -f floodgate.jar ] && curl -L -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          [! -f EssentialsX.jar ] && curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar
+          [! -f Vault.jar ] && curl -L -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar
+          [! -f WorldEdit.jar ] && curl -L -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar
+          [! -f GriefPrevention.jar ] && curl -L -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar
+          [! -f CoreProtect.jar ] && curl -L -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar
+          [! -f GSit.jar ] && curl -L -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar
 
-          echo "=== FINAL CHECK - No Overwrite ==="
           ls -lh
           cd..
 
-          # World & Config - kabhi overwrite nahi
-          [! -f eula.txt ] && echo "eula=true" > eula.txt && echo "[CREATE] eula.txt"
-          [! -f server.properties ] && echo -e "online-mode=false\nserver-port=25565\nmotd=Anti-Overwrite 6GB" > server.properties && echo "[CREATE] server.properties"
-          [ -f server.properties ] && echo "[SKIP] server.properties & world already hai"
+          [! -f eula.txt ] && echo "eula=true" > eula.txt
+          [! -f server.properties ] && echo "online-mode=false" > server.properties
 
           java -Xmx5G -Xms2G -jar paper.jar nogui &
-          sleep 35
+          sleep 30
 
           cd..
-          [! -f playit ] && curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64 && chmod +x playit
-          echo "IP: olds-growers.tun.ply.gg | ANTI-OVERWRITE ON | Via MODRINTH OK"
+          curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
+          chmod +x playit
+          echo "IP: olds-growers.tun.ply.gg | 5GB RAM | Via Modrinth OK"
          ./playit --secret $SECRET
