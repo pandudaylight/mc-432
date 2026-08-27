@@ -1,4 +1,4 @@
-name: MC Permanent Playit FIXED
+name: MC PERMANENT FINAL
 on:
   workflow_dispatch:
 jobs:
@@ -17,7 +17,9 @@ jobs:
             paper.jar
             plugins
             world
-          key: mc-perm-fixed-v15
+            world_nether
+            world_the_end
+          key: mc-final-v16
       - name: Run
         run: |
           [ -f paper.jar ] || curl -L -o paper.jar https://api.purpurmc.org/v2/purpur/1.21.1/latest/download
@@ -26,11 +28,10 @@ jobs:
           [ -f plugins/floodgate-spigot.jar ] || curl -L -o plugins/floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
-          java -Xmx1G -jar paper.jar nogui &
+          java -Xmx2G -jar paper.jar nogui &
           sleep 20
-          # Sahi download link
-          curl -L --retry 10 -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
-          ls -lh playit
+          curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
-          echo "=== CLAIM LINK NICHE AAYEGA ==="
-          ./playit
+          echo "=== SERVER STARTED - PERMANENT IP ==="
+          echo "olds-gallons.tun.ply.gg"
+          ./playit --secret ${{ secrets.PLAYIT_SECRET }}
