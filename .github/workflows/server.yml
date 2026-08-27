@@ -17,7 +17,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-final-v6
+          key: mc-final-v7
           restore-keys: |
             mc-final-
 
@@ -25,7 +25,6 @@ jobs:
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          set -e
           sudo apt-get install -y jq > /dev/null 2>&1
           mkdir -p server/plugins
           cd server
@@ -40,15 +39,17 @@ jobs:
           cd plugins
 
           if [! -f ViaVersion.jar ]; then
-            VIA=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url')
-            curl -L -o ViaVersion.jar "$VIA"
-            echo "ViaVersion Modrinth OK"
+            V=$(curl -s https://api.modrinth.com/v2/project/P1OZGk5p/version | jq -r '.[0].files[0].url')
+            curl -L -o ViaVersion.jar "$V"
+          else
+            echo "Skip ViaVersion - cached"
           fi
 
           if [! -f ViaBackwards.jar ]; then
-            BACK=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url')
-            curl -L -o ViaBackwards.jar "$BACK"
-            echo "ViaBackwards Modrinth OK"
+            B=$(curl -s https://api.modrinth.com/v2/project/NpMmpW5M/version | jq -r '.[0].files[0].url')
+            curl -L -o ViaBackwards.jar "$B"
+          else
+            echo "Skip ViaBackwards - cached"
           fi
 
           if [! -f Geyser.jar ]; then curl -L -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
