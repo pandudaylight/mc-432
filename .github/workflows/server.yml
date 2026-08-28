@@ -23,86 +23,83 @@ jobs:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
           sudo apt-get install -y jq > /dev/null 2>&1
+          
+          # World folder - sirf pehli baar banega
+          if [ ! -d server/world ]; then
+            echo "[CREATE] world folder pehli baar"
+            mkdir -p server/world
+          else
+            echo "[SKIP] world folder already hai - progress safe"
+          fi
           mkdir -p server/plugins
-          mkdir -p server/world
-          mkdir -p server/world_backup
+
           cd server
 
-          if [! -f server.jar ]; then
+          if [ ! -f server.jar ]; then
+            echo "[DOWNLOAD] server.jar"
             curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download
+          else
+            echo "[SKIP] server.jar"
           fi
 
-          # --- AUTO OP PLUGIN BANATE HAIN ---
-          echo "Creating AutoOP plugin..."
-          mkdir -p /tmp/autop/com/autop
-          cat > /tmp/autop/com/autop/AutoOP.java <<'JAVA'
+          # AutoOP plugin - sirf pehli baar banega
+          if [ ! -f plugins/AutoOP.jar ]; then
+            echo "[CREATE] AutoOP plugin"
+            mkdir -p /tmp/autop/com/autop
+            cat > /tmp/autop/com/autop/AutoOP.java <<'JAVA'
           package com.autop;
           import org.bukkit.event.*;
           import org.bukkit.event.player.PlayerJoinEvent;
           import org.bukkit.plugin.java.JavaPlugin;
           public class AutoOP extends JavaPlugin implements Listener {
-            public void onEnable() { getServer().getPluginManager().registerEvents(this, this); getLogger().info("AutoOP enabled for ISGamerz911769"); }
+            public void onEnable() { getServer().getPluginManager().registerEvents(this, this); }
             @EventHandler
             public void onJoin(PlayerJoinEvent e) {
               String n = e.getPlayer().getName();
-              if (n.equalsIgnoreCase(".ISGamerz911769") || n.equalsIgnoreCase("ISGamerz911769") || n.contains("ISGamerz")) {
-                e.getPlayer().setOp(true);
-                getServer().broadcastMessage("§a[AutoOP] " + n + " is now OP!");
-                getLogger().info("OPPED: " + n);
-              }
+              if (n.contains("ISGamerz")) { e.getPlayer().setOp(true); getServer().broadcastMessage("§aOP: " + n); }
             }
           }
           JAVA
-          cat > /tmp/autop/plugin.yml <<'YML'
+            cat > /tmp/autop/plugin.yml <<'YML'
           name: AutoOP
           version: 1.0
           main: com.autop.AutoOP
           api-version: '1.19'
           YML
-          cd /tmp/autop
-          javac -cp ${{ github.workspace }}/server/server.jar -d. com/autop/AutoOP.java
-          jar cf AutoOP.jar plugin.yml com
-          cp AutoOP.jar ${{ github.workspace }}/server/plugins/AutoOP.jar
-          cd ${{ github.workspace }}/server
-          echo "AutoOP plugin created"
+            cd /tmp/autop
+            javac -cp ${{ github.workspace }}/server/server.jar -d. com/autop/AutoOP.java
+            jar cf AutoOP.jar plugin.yml com
+            cp AutoOP.jar ${{ github.workspace }}/server/plugins/AutoOP.jar
+            cd ${{ github.workspace }}/server
+          else
+            echo "[SKIP] AutoOP.jar already hai"
+          fi
 
           cd plugins
-          VIAVER_URL=$(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) |.browser_download_url' | head -n 1)
-          curl -sSL -o ViaVersion.jar "$VIAVER_URL"
-          VIABACK_URL=$(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) |.browser_download_url' | head -n 1)
-          curl -sSL -o ViaBackwards.jar "$VIABACK_URL"
-          if [! -f Geyser.jar ]; then curl -sSL -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
-          if [! -f floodgate.jar ]; then curl -sSL -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
-          if [! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
-          if [! -f Vault.jar ]; then curl -sSL -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
-          if [! -f WorldEdit.jar ]; then curl -sSL -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
-          if [! -f GriefPrevention.jar ]; then curl -sSL -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
-          if [! -f CoreProtect.jar ]; then curl -sSL -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
-          if [! -f GSit.jar ]; then curl -sSL -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
-          cd..
-
-          if [! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
-          if [! -f server.properties ]; then echo -e "online-mode=false\nlevel-name=world\nsave-autosave=6000" > server.properties; fi
+          if [ ! -f ViaVersion.jar ]; then curl -sSL -o ViaVersion.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); else echo "[SKIP] ViaVersion"; fi
+          if [ ! -f ViaBackwards.jar ]; then curl -sSL -o ViaBackwards.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); else echo "[SKIP] ViaBackwards"; fi
+          if [ ! -f Geyser.jar ]; then curl -sSL -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; else echo "[SKIP] Geyser"; fi
+          if [ ! -f floodgate.jar ]; then curl -sSL -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; else echo "[SKIP] floodgate"; fi
+          if [ ! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
+          if [ ! -f Vault.jar ]; then curl -sSL -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
+          if [ ! -f WorldEdit.jar ]; then curl -sSL -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
+          if [ ! -f GriefPrevention.jar ]; then curl -sSL -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
+          if [ ! -f CoreProtect.jar ]; then curl -sSL -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
+          if [ ! -f GSit.jar ]; then curl -sSL -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
+          cd ..
+          if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
+          if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
 
           rm -f /tmp/mc-input
           mkfifo /tmp/mc-input
           cat /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
-          sleep 40
+          sleep 35
 
-          # 1 MINUTE AUTOSAVE + OP JUGAAD
-          (
-            while kill -0 $PID 2>/dev/null; do
-              echo "save-all" > /tmp/mc-input
-              echo "op.ISGamerz911769" > /tmp/mc-input
-              echo "op ISGamerz911769" > /tmp/mc-input
-              cp -r world world_backup/ 2>/dev/null || true
-              echo "[AUTOSAVE 1m] World saved + OP tried"
-              sleep 60
-            done
-          ) &
+          # 1 MIN AUTOSAVE
+          (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "[SAVE 1m] World saved"; sleep 60; done) &
 
-          cd..
+          cd ..
           curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
-         ./playit --secret $SECRET
+          ./playit --secret $SECRET
