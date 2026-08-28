@@ -12,78 +12,68 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Check Secret Exists
-        env:
-          SECRET: ${{ secrets.PLAYIT_SECRET }}
-        run: |
-          if [ -z "$SECRET" ]; then echo "❌ ERROR: PLAYIT_SECRET is MISSING! Go to Settings > Secrets > New secret > PLAYIT_SECRET"; else echo "✅ SECRET OK len=${#SECRET}"; fi
-
       - name: Restore World
         uses: actions/download-artifact@v4
         with:
           name: mc-world
-          path: server/world
+          path: .
         continue-on-error: true
+
+      - name: Check Load
+        run: |
+          mkdir -p server
+          echo "=== LOAD CHECK ==="
+          if [ -f server/world/level.dat ] || [ -f server/level.dat ]; then echo "[LOAD OK] World found"; ls -lh server/world/ 2>/dev/null | head; ls -lh server/*.dat 2>/dev/null | head; else echo "[NEW] First time world"; fi
 
       - name: Run Server
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          mkdir -p server/plugins
-          mkdir -p server/world
           cd server
-          echo "Downloading server.jar if needed..."
-          if [ ! -f server.jar ]; then curl -L --retry 3 -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
-          ls -lh server.jar
+          if [ ! -f server.jar ]; then curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
           echo "eula=true" > eula.txt
           echo "online-mode=false" > server.properties
           echo '[{"name":"saad5120","level":4}]' > ops.json
-          
-          if [ -f world/level.dat ]; then echo "[LOAD OK] World exists $(du -sh world)"; else echo "[NEW] Creating new world..."; fi
 
           rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           exec 3<> /tmp/mc-input
           java -Xmx3G -Xms1G -jar server.jar nogui < /tmp/mc-input &
           PID=$!
-          echo "Server PID $PID"
-
-          echo "Waiting 20 sec for server start..."
-          sleep 20
-          if kill -0 $PID 2>/dev/null; then echo "✅ Server RUNNING"; else echo "❌ Server FAILED TO START"; echo "--- logs/latest.log ---"; cat logs/latest.log 2>/dev/null | tail -n 100; exit 1; fi
-
-          echo "Waiting 40 sec more for world gen..."
-          sleep 40
-          ls -lh world/ | head -n 20
-          if [ ! -f world/level.dat ]; then echo "❌ level.dat still not found"; cat logs/latest.log | tail -n 50; fi
-
+          sleep 60
+          if kill -0 $PID 2>/dev/null; then echo "✅ Server RUNNING"; else echo "❌ Server died"; cat logs/latest.log | tail -n 100; exit 1; fi
+          ls -lh world/ 2>/dev/null; ls -lh *.dat 2>/dev/null; ls -lh . | grep -E "world|level"
           (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "op saad5120" > /tmp/mc-input; sleep 30; done) &
-          
           cd ..
-          if [ -z "$SECRET" ]; then
-            echo "⚠️ SECRET missing, running server WITHOUT playit for 30 min to test world save"
-            sleep 1800
-          else
-            echo "Starting Playit..."
-            curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
-            chmod +x playit
-            ./playit --secret $SECRET || (echo "Playit crashed, keeping server alive 30 min"; sleep 1800)
-          fi
+          curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
+          chmod +x playit
+          ./playit --secret $SECRET || sleep 1800
 
-      - name: Final World Check
+      - name: Save World - IMPORTANT
         if: always()
         run: |
-          echo "=== FINAL WORLD ==="
-          ls -R server/world 2>&1 | head -n 100
-          du -sh server/world || echo "NO WORLD FOLDER"
-          mkdir -p world_backup
-          cp -r server/world/* world_backup/ 2>/dev/null || true
-          ls -lh world_backup | head
+          echo "=== FINAL SAVE CHECK ==="
+          ls -lh server/world/ | head -n 20
+          ls -lh server/*.dat 2>/dev/null || echo "no dat in server"
+          ls -lh server/ | grep -E "world|level"
+          echo "Backing up everything needed for load..."
+          mkdir -p backup_to_save
+          cp -r server/world backup_to_save/ 2>/dev/null || true
+          cp -r server/world_nether backup_to_save/ 2>/dev/null || true
+          cp -r server/world_the_end backup_to_save/ 2>/dev/null || true
+          cp server/*.dat backup_to_save/ 2>/dev/null || true
+          cp server/level.dat backup_to_save/ 2>/dev/null || true
+          ls -lh backup_to_save/
 
       - name: Upload World
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mc-world
-          path: server/world
+          path: |
+            server/world
+            server/world_nether
+            server/world_the_end
+            server/level.dat
+            server/*.dat
           if-no-files-found: warn
           overwrite: true
