@@ -22,49 +22,13 @@ jobs:
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          echo "=== CHECK SECRET ==="
-          if [ -z "$SECRET" ]; then echo "ERROR: PLAYIT_SECRET missing in repo secrets!"; exit 1; fi
-          sudo apt-get install -y jq > /dev/null 2>&1
-          
-          if [ ! -d server/world ]; then
-            echo "[CREATE] world first time"
-            mkdir -p server/world
-          else
-            echo "[SKIP] world already exists - progress safe - size: $(du -sh server/world | cut -f1)"
-          fi
           mkdir -p server/plugins
+          if [ ! -d server/world ]; then mkdir -p server/world; echo "[CREATE] world"; else echo "[SKIP] world safe"; fi
           cd server
-
-          if [ ! -f server.jar ]; then curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; echo "[DOWNLOAD] server.jar"; else echo "[SKIP] server.jar"; fi
-
-          if [ ! -f plugins/AutoOP.jar ]; then
-            echo "[CREATE] AutoOP"
-            mkdir -p /tmp/autop/com/autop
-            cat > /tmp/autop/com/autop/AutoOP.java <<'JAVA'
-          package com.autop;
-          import org.bukkit.event.*;
-          import org.bukkit.event.player.PlayerJoinEvent;
-          import org.bukkit.plugin.java.JavaPlugin;
-          public class AutoOP extends JavaPlugin implements Listener {
-            public void onEnable() { getServer().getPluginManager().registerEvents(this, this); }
-            @EventHandler
-            public void onJoin(PlayerJoinEvent e) {
-              if (e.getPlayer().getName().contains("ISGamerz")) { e.getPlayer().setOp(true); getServer().broadcastMessage("§aOP: " + e.getPlayer().getName()); }
-            }
-          }
-          JAVA
-            cat > /tmp/autop/plugin.yml <<'YML'
-          name: AutoOP
-          version: 1.0
-          main: com.autop.AutoOP
-          api-version: '1.19'
-          YML
-            cd /tmp/autop && javac -cp ${{ github.workspace }}/server/server.jar -d. com/autop/AutoOP.java && jar cf AutoOP.jar plugin.yml com && cp AutoOP.jar ${{ github.workspace }}/server/plugins/AutoOP.jar && cd ${{ github.workspace }}/server
-          else echo "[SKIP] AutoOP"; fi
-
+          if [ ! -f server.jar ]; then curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
           cd plugins
-          if [ ! -f ViaVersion.jar ]; then curl -sSL -o ViaVersion.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); else echo "[SKIP] ViaVersion"; fi
-          if [ ! -f ViaBackwards.jar ]; then curl -sSL -o ViaBackwards.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); else echo "[SKIP] ViaBackwards"; fi
+          if [ ! -f ViaVersion.jar ]; then curl -sSL -o ViaVersion.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); fi
+          if [ ! -f ViaBackwards.jar ]; then curl -sSL -o ViaBackwards.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); fi
           if [ ! -f Geyser.jar ]; then curl -sSL -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
           if [ ! -f floodgate.jar ]; then curl -sSL -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
           if [ ! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
@@ -76,13 +40,12 @@ jobs:
           cd ..
           if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
           if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
-
+          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":".ISGamerz911769","level":4},{"uuid":"00000000-0000-0000-0000-000000000001","name":"ISGamerz911769","level":4}]' > ops.json
           rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           cat /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
           sleep 35
-          (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; sleep 60; done) &
-
+          (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "op .ISGamerz911769" > /tmp/mc-input; sleep 60; done) &
           cd ..
           curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
