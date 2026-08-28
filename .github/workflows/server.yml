@@ -62,7 +62,7 @@ jobs:
           cat <<EOF > ops.json
           [
             {
-              "uuid": "00000000-0000-0000-0000-000000000000",
+              "uuid": "00090000-0000-0000-0000-000001000000",
               "name": ".ISGamerz911769",
               "level": 4,
               "bypassesPlayerLimit": false
