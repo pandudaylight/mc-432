@@ -11,19 +11,21 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Cache
-        uses: actions/cache@v4
+
+      - name: Restore World
+        uses: actions/cache/restore@v4
         with:
           path: server
           key: mc-final-${{ github.run_number }}
           restore-keys: |
             mc-final-
+
       - name: Run
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
           mkdir -p server/plugins
-          if [ ! -d server/world ]; then mkdir -p server/world; echo "[CREATE] world"; else echo "[SKIP] world safe"; fi
+          if [ ! -d server/world ]; then mkdir -p server/world; echo "[CREATE] world first time"; else echo "[SKIP] world safe size=$(du -sh server/world | cut -f1)"; ls server/world/ | head; fi
           cd server
           if [ ! -f server.jar ]; then curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
           cd plugins
@@ -36,27 +38,26 @@ jobs:
           cd ..
           if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
           if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
+          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4}]' > ops.json
 
-          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4,"bypassesPlayerLimit":true}]' > ops.json
-
-          # FIXED FIFO - tail -f se loop kabhi band nahi hoga
-          rm -f /tmp/mc-input
-          mkfifo /tmp/mc-input
+          rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           tail -f /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
-          sleep 40
 
-          # OP LOOP - ab har 15 sec me chalega, kabhi band nahi hoga
-          (
-            while true; do
-              echo "op saad5120" > /tmp/mc-input
-              echo "save-all" > /tmp/mc-input
-              echo "[LOOP] op + save-all sent to saad5120"
-              sleep 15
-            done
-          ) &
+          # Cancel pe bhi save-all hoga
+          trap 'echo "save-all" > /tmp/mc-input; sleep 3; echo "[TRAP] Final save done"' EXIT TERM INT
+
+          sleep 40
+          (while true; do echo "op saad5120" > /tmp/mc-input; echo "save-all" > /tmp/mc-input; sleep 15; done) &
 
           cd ..
           curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET
+
+      - name: Save World Even If Cancelled
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: server
+          key: mc-final-${{ github.run_number }}
