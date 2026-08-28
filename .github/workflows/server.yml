@@ -16,14 +16,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mc-world
-          path: .
+          path: server/world
         continue-on-error: true
 
       - name: Check Load
         run: |
-          mkdir -p server
-          echo "=== LOAD CHECK ==="
-          if [ -f server/world/level.dat ] || [ -f server/level.dat ]; then echo "[LOAD OK] World found"; ls -lh server/world/ 2>/dev/null | head; ls -lh server/*.dat 2>/dev/null | head; else echo "[NEW] First time world"; fi
+          mkdir -p server/world
+          if [ -f server/world/level.dat ]; then echo "[LOAD OK] ✅ World loaded $(du -sh server/world)"; ls server/world/ || true; else echo "[NEW] First time"; fi
 
       - name: Run Server
         env:
@@ -40,29 +39,27 @@ jobs:
           java -Xmx3G -Xms1G -jar server.jar nogui < /tmp/mc-input &
           PID=$!
           sleep 60
-          if kill -0 $PID 2>/dev/null; then echo "✅ Server RUNNING"; else echo "❌ Server died"; cat logs/latest.log | tail -n 100; exit 1; fi
-          ls -lh world/ 2>/dev/null; ls -lh *.dat 2>/dev/null; ls -lh . | grep -E "world|level"
+          if kill -0 $PID 2>/dev/null; then echo "✅ Server RUNNING"; else cat logs/latest.log | tail -n 100; exit 1; fi
+          ls -lh world/ || true
+          ls -lh world_nether/ || true
+          echo "save-all" > /tmp/mc-input
+          sleep 3
+          ls -lh world/ || true
+
           (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "op saad5120" > /tmp/mc-input; sleep 30; done) &
           cd ..
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET || sleep 1800
 
-      - name: Save World - IMPORTANT
+      - name: Final Save
         if: always()
         run: |
-          echo "=== FINAL SAVE CHECK ==="
-          ls -lh server/world/ | head -n 20
-          ls -lh server/*.dat 2>/dev/null || echo "no dat in server"
-          ls -lh server/ | grep -E "world|level"
-          echo "Backing up everything needed for load..."
-          mkdir -p backup_to_save
-          cp -r server/world backup_to_save/ 2>/dev/null || true
-          cp -r server/world_nether backup_to_save/ 2>/dev/null || true
-          cp -r server/world_the_end backup_to_save/ 2>/dev/null || true
-          cp server/*.dat backup_to_save/ 2>/dev/null || true
-          cp server/level.dat backup_to_save/ 2>/dev/null || true
-          ls -lh backup_to_save/
+          echo "Final save-all..."
+          echo "save-all" > /tmp/mc-input || true
+          sleep 5
+          echo "=== WORLD ==="; ls -lh server/world/ || true
+          echo "=== ROOT ==="; ls -lh server/ | grep -E "world|level" || true
 
       - name: Upload World
         if: always()
@@ -73,7 +70,4 @@ jobs:
             server/world
             server/world_nether
             server/world_the_end
-            server/level.dat
-            server/*.dat
-          if-no-files-found: warn
           overwrite: true
