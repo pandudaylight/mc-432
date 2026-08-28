@@ -32,7 +32,7 @@ jobs:
           cd server
 
           if [ ! -f server.jar ]; then
-            curl -sSL -H "User-Agent: Mozilla/5.0" -o server.jar https://api.purpurmc.org/v2/purpur/1.21.4/latest/download
+            curl -sSL -H "User-Agent: Mozilla/5.0" -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download
           fi
 
           cd plugins
