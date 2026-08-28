@@ -18,9 +18,9 @@ jobs:
           path: |
             server/server.jar
             server/plugins
-          key: mc-jars-v3
+          key: mc-jars-v4
 
-      - name: Restore World - LOAD
+      - name: Restore World
         uses: actions/download-artifact@v4
         with:
           name: mc-world
@@ -29,10 +29,12 @@ jobs:
 
       - name: Check Load
         run: |
-          echo "=== LOAD CHECK ==="
-          if [ -f server/world/level.dat ]; then echo "[LOAD OK] World loaded, size=$(du -sh server/world | cut -f1)"; ls server/world | head -n 10; else echo "[LOAD FAIL] No level.dat, new world banega"; mkdir -p server/world; fi
+          echo "=== BEFORE RUN ==="
+          mkdir -p server/world
           mkdir -p server/world_backup
           mkdir -p world_backup
+          if [ -f server/world/level.dat ]; then echo "[LOAD OK] $(du -sh server/world)"; else echo "[LOAD] First time - new world will be created, wait 60 sec after start"; fi
+          ls -lh server/world || echo "world empty - will be created"
 
       - name: Run
         env:
@@ -41,6 +43,7 @@ jobs:
           cd server
           if [ ! -f server.jar ]; then curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
           cd plugins
+          for jar in ViaVersion ViaBackwards Geyser floodgate EssentialsX Vault; do if [ ! -f ${jar}.jar ]; then echo "Downloading $jar"; fi; done
           if [ ! -f ViaVersion.jar ]; then curl -sSL -o ViaVersion.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); fi
           if [ ! -f ViaBackwards.jar ]; then curl -sSL -o ViaBackwards.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); fi
           if [ ! -f Geyser.jar ]; then curl -sSL -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
@@ -48,45 +51,54 @@ jobs:
           if [ ! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
           if [ ! -f Vault.jar ]; then curl -sSL -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
           cd ..
-          if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
-          if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
+          echo "eula=true" > eula.txt
+          echo "online-mode=false" > server.properties
           echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4}]' > ops.json
 
           rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           tail -f /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
-          trap 'echo "save-all" > /tmp/mc-input; sleep 3; cp -r world world_backup; cp -r world ../world_backup; echo "[TRAP] Backup saved"' EXIT TERM INT
-          sleep 35
-          (while true; do echo "op saad5120" > /tmp/mc-input; echo "save-all" > /tmp/mc-input; cp -r world world_backup 2>/dev/null; cp -r world ../world_backup 2>/dev/null; echo "[BACKUP] saved to file"; sleep 60; done) &
+          trap 'echo "save-all" > /tmp/mc-input; sleep 5; echo "[TRAP] Saving..."; ls -lh world/ | head; cp -r world world_backup 2>/dev/null; cp -r world ../world_backup 2>/dev/null; cp -r world ../server/world 2>/dev/null || true' EXIT TERM INT
+
+          echo "Waiting 50 sec for world to generate..."
+          sleep 50
+          echo "World after 50 sec:"; ls -lh world/ | head -n 20
+
+          (while true; do echo "op saad5120" > /tmp/mc-input; echo "save-all" > /tmp/mc-input; cp -r world world_backup 2>/dev/null; cp -r world ../world_backup 2>/dev/null; sleep 30; done) &
+
           cd ..
           curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET
 
-      - name: Check Save
+      - name: Final Backup Copy
         if: always()
         run: |
-          echo "=== SAVE CHECK ==="
+          echo "=== AFTER RUN ==="
           ls -lh server/world/ | head -n 20
-          echo "world_backup size $(du -sh server/world_backup | cut -f1)"
-          echo "world_backup root size $(du -sh world_backup | cut -f1)"
+          echo "Copying to backup folders..."
+          cp -r server/world server/world_backup 2>/dev/null || echo "copy 1 failed"
+          cp -r server/world world_backup 2>/dev/null || echo "copy 2 failed"
+          echo "world_backup size $(du -sh server/world_backup)"
+          echo "root backup size $(du -sh world_backup)"
+          ls -lh world_backup/ | head -n 10 || echo "root backup empty"
 
-      - name: Save World - ARTIFACT FOR LOAD
+      - name: Save World - FOR LOAD
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mc-world
           path: server/world
+          if-no-files-found: warn
           retention-days: 30
           overwrite: true
 
-      - name: Save World - FILE BACKUP
+      - name: Save File Backup
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mc-world-file-backup
-          path: |
-            server/world_backup
-            world_backup
+          path: world_backup
+          if-no-files-found: warn
           retention-days: 30
           overwrite: true
