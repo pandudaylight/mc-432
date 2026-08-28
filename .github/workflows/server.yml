@@ -33,19 +33,29 @@ jobs:
           if [ ! -f floodgate.jar ]; then curl -sSL -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
           if [ ! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
           if [ ! -f Vault.jar ]; then curl -sSL -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
-          if [ ! -f WorldEdit.jar ]; then curl -sSL -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
-          if [ ! -f GriefPrevention.jar ]; then curl -sSL -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
-          if [ ! -f CoreProtect.jar ]; then curl -sSL -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
-          if [ ! -f GSit.jar ]; then curl -sSL -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
           cd ..
           if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
           if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
-          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4},{"uuid":"00000000-0000-0000-0000-000000000001","name":"ISGamerz911769","level":4}]' > ops.json
-          rm -f /tmp/mc-input && mkfifo /tmp/mc-input
-          cat /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
+
+          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4,"bypassesPlayerLimit":true}]' > ops.json
+
+          # FIXED FIFO - tail -f se loop kabhi band nahi hoga
+          rm -f /tmp/mc-input
+          mkfifo /tmp/mc-input
+          tail -f /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
-          sleep 35
-          (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "op .ISGamerz911769" > /tmp/mc-input; sleep 60; done) &
+          sleep 40
+
+          # OP LOOP - ab har 15 sec me chalega, kabhi band nahi hoga
+          (
+            while true; do
+              echo "op saad5120" > /tmp/mc-input
+              echo "save-all" > /tmp/mc-input
+              echo "[LOOP] op + save-all sent to saad5120"
+              sleep 15
+            done
+          ) &
+
           cd ..
           curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
