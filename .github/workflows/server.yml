@@ -40,7 +40,7 @@ jobs:
           cd ..
           if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
           if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
-          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":".ISGamerz911769","level":4},{"uuid":"00000000-0000-0000-0000-000000000001","name":"ISGamerz911769","level":4}]' > ops.json
+          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4},{"uuid":"00000000-0000-0000-0000-000000000001","name":"ISGamerz911769","level":4}]' > ops.json
           rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           cat /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
