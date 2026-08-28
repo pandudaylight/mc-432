@@ -1,28 +1,23 @@
 name: MC FINAL
-
 on:
   workflow_dispatch:
-
 jobs:
   mc:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
-
       - name: Cache
         uses: actions/cache@v4
         with:
           path: server
-          key: mc-final-10
+          key: mc-final-${{ github.run_number }}
           restore-keys: |
             mc-final-
-
       - name: Run
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
@@ -36,45 +31,42 @@ jobs:
           fi
 
           cd plugins
-
-          VIAVER_URL=$(curl -sSL -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
-          curl -sSL -H "User-Agent: Mozilla/5.0" -o ViaVersion.jar "$VIAVER_URL"
-
-          VIABACK_URL=$(curl -sSL -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
-          curl -sSL -H "User-Agent: Mozilla/5.0" -o ViaBackwards.jar "$VIABACK_URL"
-
-          curl -sSL -H "User-Agent: Mozilla/5.0" -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-          curl -sSL -H "User-Agent: Mozilla/5.0" -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
-
-          if [ ! -f EssentialsX.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
-          if [ ! -f Vault.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
-          if [ ! -f WorldEdit.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
-          if [ ! -f GriefPrevention.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
-          if [ ! -f CoreProtect.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
-          if [ ! -f GSit.jar ]; then curl -sSL -H "User-Agent: Mozilla/5.0" -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
-
+          VIAVER_URL=$(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          curl -sSL -o ViaVersion.jar "$VIAVER_URL"
+          VIABACK_URL=$(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          curl -sSL -o ViaBackwards.jar "$VIABACK_URL"
+          if [ ! -f Geyser.jar ]; then curl -sSL -o Geyser.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
+          if [ ! -f floodgate.jar ]; then curl -sSL -o floodgate.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
+          if [ ! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
+          if [ ! -f Vault.jar ]; then curl -sSL -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
+          if [ ! -f WorldEdit.jar ]; then curl -sSL -o WorldEdit.jar https://hangarcdn.papermc.io/plugins/EngineHub/WorldEdit/versions/7.3.11/PAPER/WorldEdit-Bukkit-7.3.11.jar; fi
+          if [ ! -f GriefPrevention.jar ]; then curl -sSL -o GriefPrevention.jar https://hangarcdn.papermc.io/plugins/Big_Scary/GriefPrevention/versions/16.18.0/PAPER/GriefPrevention-16.18.0.jar; fi
+          if [ ! -f CoreProtect.jar ]; then curl -sSL -o CoreProtect.jar https://hangarcdn.papermc.io/plugins/CoreProtect/CoreProtect/versions/22.4/PAPER/CoreProtect-22.4.jar; fi
+          if [ ! -f GSit.jar ]; then curl -sSL -o GSit.jar https://hangarcdn.papermc.io/plugins/Gecolay/GSit/versions/7.0.0.0/PAPER/GSit-7.0.0.0.jar; fi
           cd ..
 
           if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
           if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
 
-          # Auto OP Generator
-          cat <<EOF > ops.json
-          [
-            {
-              "uuid": "00090000-0000-0000-0000-000001000000",
-              "name": ".ISGamerz911769",
-              "level": 4,
-              "bypassesPlayerLimit": false
-            }
-          ]
-          EOF
+          # FIFO for console commands - isse OP hoga
+          rm -f /tmp/mc-input
+          mkfifo /tmp/mc-input
+          cat /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
+          SERVER_PID=$!
+          sleep 35
 
-          java -Xmx5G -Xms2G -jar server.jar nogui &
-          sleep 30
+          # Auto OP - har 30 sec me try karega
+          (
+            while kill -0 $SERVER_PID 2>/dev/null; do
+              echo "op .ISGamerz911769" > /tmp/mc-input
+              echo "save-all" > /tmp/mc-input
+              sleep 30
+            done
+          ) &
+
+          echo "OP loop started for .ISGamerz911769 + auto save-all"
 
           cd ..
-
-          curl -sSL -H "User-Agent: Mozilla/5.0" -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
+          curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET
