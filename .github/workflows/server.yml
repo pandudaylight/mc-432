@@ -18,30 +18,28 @@ jobs:
           path: |
             server/server.jar
             server/plugins
-          key: mc-jars-v2
+          key: mc-jars-v3
 
-      - name: Restore World Backup
+      - name: Restore World - LOAD
         uses: actions/download-artifact@v4
         with:
-          name: mc-world-backup
+          name: mc-world
           path: server/world
         continue-on-error: true
+
+      - name: Check Load
+        run: |
+          echo "=== LOAD CHECK ==="
+          if [ -f server/world/level.dat ]; then echo "[LOAD OK] World loaded, size=$(du -sh server/world | cut -f1)"; ls server/world | head -n 10; else echo "[LOAD FAIL] No level.dat, new world banega"; mkdir -p server/world; fi
+          mkdir -p server/world_backup
+          mkdir -p world_backup
 
       - name: Run
         env:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
-          echo "=== Creating Backup Folders ==="
-          mkdir -p server/plugins
-          mkdir -p server/world
-          mkdir -p server/world_backup
-          mkdir -p world_backup
-          
-          if [ -d server/world ]; then echo "[EXISTS] world size=$(du -sh server/world | cut -f1)"; ls server/world | head -n 5; else echo "[NEW] world"; fi
-
           cd server
-          if [ ! -f server.jar ]; then curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; echo "[DOWNLOAD] server.jar"; else echo "[SKIP] server.jar"; fi
-          
+          if [ ! -f server.jar ]; then curl -sSL -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
           cd plugins
           if [ ! -f ViaVersion.jar ]; then curl -sSL -o ViaVersion.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); fi
           if [ ! -f ViaBackwards.jar ]; then curl -sSL -o ViaBackwards.jar $(curl -sSL https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1); fi
@@ -50,7 +48,6 @@ jobs:
           if [ ! -f EssentialsX.jar ]; then curl -sSL -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar; fi
           if [ ! -f Vault.jar ]; then curl -sSL -o Vault.jar https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar; fi
           cd ..
-
           if [ ! -f eula.txt ]; then echo "eula=true" > eula.txt; fi
           if [ ! -f server.properties ]; then echo "online-mode=false" > server.properties; fi
           echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4}]' > ops.json
@@ -58,32 +55,37 @@ jobs:
           rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           tail -f /tmp/mc-input | java -Xmx5G -Xms2G -jar server.jar nogui &
           PID=$!
-          trap 'echo "save-all" > /tmp/mc-input; sleep 5; cp -r world world_backup; cp -r world ../world_backup; echo "[TRAP] Backup saved to file"' EXIT TERM INT
-
+          trap 'echo "save-all" > /tmp/mc-input; sleep 3; cp -r world world_backup; cp -r world ../world_backup; echo "[TRAP] Backup saved"' EXIT TERM INT
           sleep 35
-          (
-            while true; do
-              echo "op saad5120" > /tmp/mc-input
-              echo "save-all" > /tmp/mc-input
-              cp -r world world_backup 2>/dev/null || true
-              cp -r world ../world_backup 2>/dev/null || true
-              echo "[BACKUP] world -> world_backup folder saved"
-              sleep 60
-            done
-          ) &
-
+          (while true; do echo "op saad5120" > /tmp/mc-input; echo "save-all" > /tmp/mc-input; cp -r world world_backup 2>/dev/null; cp -r world ../world_backup 2>/dev/null; echo "[BACKUP] saved to file"; sleep 60; done) &
           cd ..
           curl -sSL -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret $SECRET
 
-      - name: Save World Backup to Files
+      - name: Check Save
+        if: always()
+        run: |
+          echo "=== SAVE CHECK ==="
+          ls -lh server/world/ | head -n 20
+          echo "world_backup size $(du -sh server/world_backup | cut -f1)"
+          echo "world_backup root size $(du -sh world_backup | cut -f1)"
+
+      - name: Save World - ARTIFACT FOR LOAD
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mc-world-backup
+          name: mc-world
+          path: server/world
+          retention-days: 30
+          overwrite: true
+
+      - name: Save World - FILE BACKUP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc-world-file-backup
           path: |
-            server/world
             server/world_backup
             world_backup
           retention-days: 30
