@@ -1,86 +1,14 @@
-name: MC FINAL
-on:
-  workflow_dispatch:
-jobs:
-  mc:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v5
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      # 1. CACHE SE RESTORE
-      - name: Restore World CACHE
-        uses: actions/cache@v4
-        id: cache-restore
-        with:
-          path: |
-            server/world
-            server/world_nether
-            server/world_the_end
-            server/level.dat
-          key: mc-world-${{ github.run_id }}
-          restore-keys: |
-            mc-world-
-
-      # 2. ARTIFACT SE RESTORE (backup)
-      - name: Restore World ARTIFACT
-        uses: actions/download-artifact@v4
-        with:
-          name: mc-world
-          path: server
-        continue-on-error: true
-
-      - name: Check Load
         run: |
-          mkdir -p server/world
-          echo "=== CHECK ==="
-          echo "Cache hit: ${{ steps.cache-restore.outputs.cache-hit }}"
-          find server -name "level.dat" 2>/dev/null || echo "No level.dat"
-          ls -lh server/ 2>/dev/null | grep -E "world|level" || true
-          ls -lh server/world/ 2>/dev/null | head -n 10 || true
-          if [ -f server/world/level.dat ]; then echo "[LOAD OK] ✅ CACHE/ARTIFACT se world loaded"; else echo "[NEW] First time"; fi
-
-      - name: Run Server
-        env:
-          SECRET: ${{ secrets.PLAYIT_SECRET }}
-        run: |
-          cd server
-          if [ ! -f server.jar ]; then curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
-          echo "eula=true" > eula.txt
-          echo "online-mode=false" > server.properties
-          echo '[{"name":"saad5120","level":4}]' > ops.json
-
-          rm -f /tmp/mc-input && mkfifo /tmp/mc-input
-          exec 3<> /tmp/mc-input
-          java -Xmx3G -Xms1G -jar server.jar nogui < /tmp/mc-input &
-          PID=$!
-          sleep 70
-          echo "=== AFTER START ==="
-          find . -name "level.dat" 2>/dev/null || true
-          ls -lh world/ 2>/dev/null | head || true
-          echo "save-all" > /tmp/mc-input
-          sleep 3
-          (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "op saad5120" > /tmp/mc-input; sleep 30; done) &
-          cd ..
-          curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
-          chmod +x playit
-          ./playit --secret $SECRET || sleep 1800
-
-      - name: Final Check
-        if: always()
-        run: |
-          echo "save-all" > /tmp/mc-input || true
-          sleep 5
-          echo "=== FINAL ==="
+          echo "=== FINAL WORLD CHECK ==="
+          if [ -p /tmp/mc-input ]; then
+            echo "save-all flush" > /tmp/mc-input || true
+            sleep 5
+          fi
           find server -name "level.dat" 2>/dev/null || true
-          du -sh server/world/ 2>/dev/null || true
-          ls -lh server/world/ 2>/dev/null | head || true
+          du -sh server/world 2>/dev/null || true
+          ls -lah server/world 2>/dev/null | head -n 20 || true
 
-      # 3. ARTIFACT SE SAVE (backup)
+      # 3) Save world as artifact backup
       - name: Save World ARTIFACT
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,8 +18,5 @@ jobs:
             server/world
             server/world_nether
             server/world_the_end
-            server/level.dat
           overwrite: true
           retention-days: 30
-
-      # 4. CACHE SE SAVE (auto hota hai upar wale key se)
