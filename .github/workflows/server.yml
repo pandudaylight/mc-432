@@ -23,7 +23,7 @@ jobs:
             server/world
             server/world_nether
             server/world_the_end
-          key: mc-data-v1-${{ github.run_id }}
+          key: mc-data-v2-${{ github.run_id }}
           restore-keys: |
             mc-data-v1-
 
