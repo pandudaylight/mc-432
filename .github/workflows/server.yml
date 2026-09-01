@@ -37,25 +37,24 @@ jobs:
           mkdir -p server/plugins server/world
           echo "Cache: ${{ steps.cache_restore.outputs.cache-hit }}"
           find server -name "level.dat" 2>/dev/null || echo "First time"
-          ls -lh server/world/ 2>/dev/null | head || true
           if [ -f server/world/level.dat ] || [ -f server/level.dat ]; then echo "[LOAD OK] ✅"; else echo "[NEW]"; fi
 
-      - name: Download Plugins - Geyser Essentials GSit
+      - name: Download Plugins FIXED
         run: |
-          cd server
-          mkdir -p plugins
-          cd plugins
-          # Geyser - Bedrock support
-          if [ ! -f Geyser-Spigot.jar ]; then curl -L -o Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
-          # Floodgate
-          if [ ! -f floodgate-spigot.jar ]; then curl -L -o floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
-          # EssentialsX
-          if [ ! -f EssentialsX.jar ]; then curl -L -o EssentialsX.jar https://hangarcdn.papermc.io/plugins/EssentialsX/Essentials/versions/2.21.0/EssentialsX-2.21.0.jar; fi
-          # GSit
-          if [ ! -f GSit.jar ]; then curl -L -o GSit.jar https://hangarcdn.papermc.io/plugins/YouHaveTrouble/GSit/versions/1.12.3/PAPER/GSit-1.12.3.jar; fi
+          cd server/plugins
+          rm -f EssentialsX.jar GSit.jar Geyser-Spigot.jar floodgate-spigot.jar
+          # Geyser + Floodgate - working
+          curl -L -o Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+          curl -L -o floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+          # EssentialsX - fixed direct link
+          curl -L -o EssentialsX.jar https://github.com/EssentialsX/Essentials/releases/download/2.21.0/EssentialsX-2.21.0.jar
+          # GSit - fixed direct link
+          curl -L -o GSit.jar https://github.com/YouHaveTrouble/mc-gsit/releases/download/1.12.3/GSit-1.12.3.jar
+          # Check size - corrupt check
           ls -lh
+          for f in *.jar; do if [ $(stat -c%s "$f") -lt 50000 ]; then echo "Corrupt $f"; rm "$f"; fi; done
 
-      - name: Download server jar
+      - name: Download server + OP
         run: |
           cd server
           if [ ! -f server.jar ]; then curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
@@ -68,7 +67,9 @@ jobs:
           view-distance=10
           max-players=20
           EOF
-          echo '[{"name":"saad5120","level":4}]' > ops.json
+          # OP saad5120 - 100% hoga ab
+          echo '[{"uuid":"00000000-0000-0000-0000-000000000000","name":"saad5120","level":4,"bypassesPlayerLimit":true}]' > ops.json
+          cat ops.json
 
       - name: Run server
         env:
@@ -80,23 +81,19 @@ jobs:
           java -Xmx3G -Xms1G -jar server.jar nogui < /tmp/mc-input &
           PID=$!
           sleep 90
-          echo "=== AFTER 90s ==="
           find . -name "level.dat" 2>/dev/null || true
-          ls -lh world/ 2>/dev/null | head || true
-          ls -lh ./*.dat 2>/dev/null || true
+          echo "op saad5120" > /tmp/mc-input
           (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; sleep 30; done) &
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret "$SECRET" || sleep 1800
-          echo "save-all" > /tmp/mc-input; sleep 5
-          echo "stop" > /tmp/mc-input; sleep 20
+          echo "save-all" > /tmp/mc-input; sleep 5; echo "stop" > /tmp/mc-input; sleep 20
 
-      - name: Final Save Check
+      - name: Final check
         if: always()
         run: |
-          echo "=== FINAL ==="
           find server -name "level.dat" 2>/dev/null
-          du -sh server/world/ 2>/dev/null || true
+          ls -lh server/plugins/ 2>/dev/null | head
 
       - name: Save ARTIFACT
         if: always()
