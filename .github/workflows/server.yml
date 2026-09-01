@@ -1,24 +1,18 @@
 name: MC FINAL
 on:
   workflow_dispatch:
-
 jobs:
   mc:
     runs-on: ubuntu-latest
     timeout-minutes: 360
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v5
         with:
           java-version: "21"
           distribution: "temurin"
 
-      - name: Prepare server directory
-        run: mkdir -p server
-
-      - name: Restore world CACHE
+      - name: Restore CACHE
         uses: actions/cache@v4
         id: cache_restore
         with:
@@ -26,30 +20,45 @@ jobs:
             server/world
             server/world_nether
             server/world_the_end
+            server/plugins
           key: mc-final-${{ github.run_id }}
           restore-keys: |
             mc-final-
 
-      - name: Restore world ARTIFACT
+      - name: Restore ARTIFACT
         uses: actions/download-artifact@v4
         with:
           name: mc-backup
           path: server
         continue-on-error: true
 
-      - name: Check what loaded
+      - name: Check Load
         run: |
-          echo "Cache hit: ${{ steps.cache_restore.outputs.cache-hit }}"
-          find server -name "level.dat" 2>/dev/null || echo "❌ No level.dat = First time"
-          ls -lh server/world/ 2>/dev/null | head -n 15 || echo "world empty"
-          if [ -f server/world/level.dat ]; then echo "[LOAD OK] ✅ World loaded"; else echo "[NEW] Naya world banega"; fi
+          mkdir -p server/plugins server/world
+          echo "Cache: ${{ steps.cache_restore.outputs.cache-hit }}"
+          find server -name "level.dat" 2>/dev/null || echo "First time"
+          ls -lh server/world/ 2>/dev/null | head || true
+          if [ -f server/world/level.dat ] || [ -f server/level.dat ]; then echo "[LOAD OK] ✅"; else echo "[NEW]"; fi
+
+      - name: Download Plugins - Geyser Essentials GSit
+        run: |
+          cd server
+          mkdir -p plugins
+          cd plugins
+          # Geyser - Bedrock support
+          if [ ! -f Geyser-Spigot.jar ]; then curl -L -o Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot; fi
+          # Floodgate
+          if [ ! -f floodgate-spigot.jar ]; then curl -L -o floodgate-spigot.jar https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot; fi
+          # EssentialsX
+          if [ ! -f EssentialsX.jar ]; then curl -L -o EssentialsX.jar https://hangarcdn.papermc.io/plugins/EssentialsX/Essentials/versions/2.21.0/EssentialsX-2.21.0.jar; fi
+          # GSit
+          if [ ! -f GSit.jar ]; then curl -L -o GSit.jar https://hangarcdn.papermc.io/plugins/YouHaveTrouble/GSit/versions/1.12.3/PAPER/GSit-1.12.3.jar; fi
+          ls -lh
 
       - name: Download server jar
         run: |
           cd server
-          if [ ! -f server.jar ]; then
-            curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download
-          fi
+          if [ ! -f server.jar ]; then curl -L -o server.jar https://api.purpurmc.org/v2/purpur/1.21.10/latest/download; fi
           echo "eula=true" > eula.txt
           cat > server.properties << 'EOF'
           online-mode=false
@@ -57,8 +66,7 @@ jobs:
           enable-command-block=true
           spawn-protection=0
           view-distance=10
-          simulation-distance=8
-          max-players=10
+          max-players=20
           EOF
           echo '[{"name":"saad5120","level":4}]' > ops.json
 
@@ -67,42 +75,30 @@ jobs:
           SECRET: ${{ secrets.PLAYIT_SECRET }}
         run: |
           cd server
-          rm -f /tmp/mc-input
-          mkfifo /tmp/mc-input
+          rm -f /tmp/mc-input && mkfifo /tmp/mc-input
           exec 3<> /tmp/mc-input
-
           java -Xmx3G -Xms1G -jar server.jar nogui < /tmp/mc-input &
-          SERVER_PID=$!
-
-          echo "Waiting 80 sec..."
-          sleep 80
-
-          echo "=== World gen check ==="
+          PID=$!
+          sleep 90
+          echo "=== AFTER 90s ==="
           find . -name "level.dat" 2>/dev/null || true
           ls -lh world/ 2>/dev/null | head || true
-
-          (while kill -0 $SERVER_PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; echo "op saad5120" > /tmp/mc-input; sleep 30; done) &
-
+          ls -lh ./*.dat 2>/dev/null || true
+          (while kill -0 $PID 2>/dev/null; do echo "save-all" > /tmp/mc-input; sleep 30; done) &
           curl -L -o playit https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-linux-amd64
           chmod +x playit
           ./playit --secret "$SECRET" || sleep 1800
+          echo "save-all" > /tmp/mc-input; sleep 5
+          echo "stop" > /tmp/mc-input; sleep 20
 
-          echo "Stopping..."
-          echo "save-all" > /tmp/mc-input || true
-          sleep 5
-          echo "stop" > /tmp/mc-input || true
-          sleep 20
-          kill $SERVER_PID 2>/dev/null || true
-
-      - name: Final check before save
+      - name: Final Save Check
         if: always()
         run: |
-          echo "=== FINAL SAVE CHECK ==="
-          find server -name "level.dat" 2>/dev/null || echo "level.dat missing!"
+          echo "=== FINAL ==="
+          find server -name "level.dat" 2>/dev/null
           du -sh server/world/ 2>/dev/null || true
-          ls -lh server/world/ 2>/dev/null | head || true
 
-      - name: Save ARTIFACT backup
+      - name: Save ARTIFACT
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -111,5 +107,6 @@ jobs:
             server/world
             server/world_nether
             server/world_the_end
+            server/plugins
+            server/level.dat
           overwrite: true
-          retention-days: 30
